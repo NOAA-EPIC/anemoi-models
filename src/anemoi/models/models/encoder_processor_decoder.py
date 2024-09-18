@@ -192,6 +192,19 @@ class AnemoiModelEncProcDec(nn.Module):
         )
 
     def forward(self, x: Tensor, model_comm_group: Optional[ProcessGroup] = None) -> Tensor:
+        arrays = x.arrays
+        lats = x.lats
+        longs = x.longs
+
+        assert self.graph_create.is_already_instantiated
+
+        dict_of_graphs = {}
+        for name in ["era5", "seviri"]:
+            array = arrays[name]
+            lat = lats[name]
+            long = longs[name]
+            dict_of_graphs[name] = self.graph_creator.new_graph(array, lat, long, name)
+
         batch_size = x.shape[0]
         ensemble_size = x.shape[2]
 
