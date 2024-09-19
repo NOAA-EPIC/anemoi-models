@@ -57,6 +57,8 @@ class AnemoiModelInterface(torch.nn.Module):
         self.multi_step = self.config.training.multistep_input
         self.graph_data = graph_data
         self.statistics = statistics
+        assert isinstance(self.statistics, dict), f"Expected a dictionary, got {type(self.statistics)}"
+        assert 'mean' in self.statistics, f"Expected 'mean' in statistics, got {(self.statistics.keys())}"
         self.metadata = metadata
         self.data_indices = data_indices
         self._build_model()

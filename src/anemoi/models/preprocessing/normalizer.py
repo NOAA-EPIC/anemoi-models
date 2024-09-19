@@ -43,11 +43,20 @@ class InputNormalizer(BasePreprocessor):
         super().__init__(config, data_indices, statistics)
 
         name_to_index_training_input = self.data_indices.data.input.name_to_index
+        assert all(isinstance(_, str) for _ in name_to_index_training_input.keys()), name_to_index_training_input
 
+        print('✅',statistics)
         minimum = statistics["minimum"]
         maximum = statistics["maximum"]
         mean = statistics["mean"]
         stdev = statistics["stdev"]
+
+        print('❌',minimum)
+        print('❌', name_to_index_training_input)
+        print('❌', self.methods)
+        print(f'Need to define normalisation method for each variable in {list(name_to_index_training_input.keys())}')
+        print('Then adapt the code below')
+        assert set(name_to_index_training_input.keys()) <= set(self.methods.keys()), "should be included"
 
         self._validate_normalization_inputs(name_to_index_training_input, minimum, maximum, mean, stdev)
 
