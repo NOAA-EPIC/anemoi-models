@@ -50,21 +50,54 @@ class InputNormalizer(BasePreprocessor):
         maximum = statistics["maximum"]
         mean = statistics["mean"]
         stdev = statistics["stdev"]
+        
+        class ListOfArray:
+            def __init__(self, arrays):
+                self.arrays = arrays
+                self.lenghts = [v.size for v in arrays]
 
-        print('❌',minimum)
-        print('❌', name_to_index_training_input)
-        print('❌', self.methods)
-        print(f'Need to define normalisation method for each variable in {list(name_to_index_training_input.keys())}')
-        print('Then adapt the code below')
-        assert set(name_to_index_training_input.keys()) <= set(self.methods.keys()), "should be included"
+            def __getitem__(self, tupl):
+                if len(tupl) == 1:
+                    return self.arrays[tupl[0]]
+                assert len(tupl) == 2
+                i, j = tupl
+                return self.arrays[i][j]
+
+            def __setitem__(self, tupl, value):
+                # if len(tupl) == 1:
+                #     self.arrays[tupl[0]] = value
+                assert len(tupl) == 2
+                i, j = tupl
+                self.arrays[i][j] = value
+
+            @property
+            def size(self):
+                return sum(v.size for v in self.arrays)
+
+            def flatten(self):
+                return np.concatenate([v.flatten() for v in self.arrays])
+
+        mean = ListOfArray(mean)
+        stdev = ListOfArray(stdev)
+        minimum = ListOfArray(minimum)
+        maximum = ListOfArray(maximum)
 
         self._validate_normalization_inputs(name_to_index_training_input, minimum, maximum, mean, stdev)
 
-        _norm_add = np.zeros((minimum.size,), dtype=np.float32)
-        _norm_mul = np.ones((minimum.size,), dtype=np.float32)
+        methods = self.methods
+
+        if not (set(name_to_index_training_input.keys()) <= set(self.methods.keys())):
+            # print(f"{minimum=}")
+            # print(f"{name_to_index_training_input=}")
+            # print(f"{self.methods=}")
+            print(f"✅ Need to define normalisation method for each variable in {list(name_to_index_training_input.keys())} in the config. Using 'mean-std' method for all")
+            methods = {k: "mean-std" for k in name_to_index_training_input.keys()}
+
+        _norm_add = ListOfArray([np.zeros((v.size,), dtype=np.float32) for v in minimum.arrays])
+        _norm_mul = ListOfArray([np.ones((v.size,), dtype=np.float32) for v in minimum.arrays])
 
         for name, i in name_to_index_training_input.items():
-            method = self.methods.get(name, self.default)
+            method = methods.get(name, self.default)
             if method == "mean-std":
                 LOGGER.debug(f"Normalizing: {name} is mean-std-normalised.")
                 if stdev[i] < (mean[i] * 1e-6):
@@ -91,6 +124,8 @@ class InputNormalizer(BasePreprocessor):
                 raise ValueError[f"Unknown normalisation method for {name}: {method}"]
 
         # register buffer - this will ensure they get copied to the correct device(s)
+        _norm_mul = _norm_mul.flatten()
+        _norm_add = _norm_add.flatten()
         self.register_buffer("_norm_mul", torch.from_numpy(_norm_mul), persistent=True)
         self.register_buffer("_norm_add", torch.from_numpy(_norm_add), persistent=True)
         self.register_buffer("_input_idx", data_indices.data.input.full, persistent=True)
@@ -105,6 +140,10 @@ class InputNormalizer(BasePreprocessor):
         assert maximum.size == n, (maximum.size, n)
         assert mean.size == n, (mean.size, n)
         assert stdev.size == n, (stdev.size, n)
+
+        for name, (i,j) in name_to_index_training_input.items():
+            assert i < len(minimum.arrays), ((i,j), name, [v.size for v in minimum.arrays] ,'💬', name_to_index_training_input)
+            assert j < minimum.arrays[i].size, ((i,j), name,minimum.arrays[i].size, '💬',name_to_index_training_input)
 
         assert isinstance(self.methods, dict)
         for name, method in self.methods.items():
