@@ -11,6 +11,8 @@ import logging
 import warnings
 from typing import Optional
 
+from anemoi.datasets.data.observations import ListOfArray
+
 import numpy as np
 import torch
 
@@ -51,32 +53,6 @@ class InputNormalizer(BasePreprocessor):
         mean = statistics["mean"]
         stdev = statistics["stdev"]
         
-        class ListOfArray:
-            def __init__(self, arrays):
-                self.arrays = arrays
-                self.lenghts = [v.size for v in arrays]
-
-            def __getitem__(self, tupl):
-                if len(tupl) == 1:
-                    return self.arrays[tupl[0]]
-                assert len(tupl) == 2
-                i, j = tupl
-                return self.arrays[i][j]
-
-            def __setitem__(self, tupl, value):
-                # if len(tupl) == 1:
-                #     self.arrays[tupl[0]] = value
-                assert len(tupl) == 2
-                i, j = tupl
-                self.arrays[i][j] = value
-
-            @property
-            def size(self):
-                return sum(v.size for v in self.arrays)
-
-            def flatten(self):
-                return np.concatenate([v.flatten() for v in self.arrays])
-
         mean = ListOfArray(mean)
         stdev = ListOfArray(stdev)
         minimum = ListOfArray(minimum)
@@ -93,8 +69,8 @@ class InputNormalizer(BasePreprocessor):
             print(f"✅ Need to define normalisation method for each variable in {list(name_to_index_training_input.keys())} in the config. Using 'mean-std' method for all")
             methods = {k: "mean-std" for k in name_to_index_training_input.keys()}
 
-        _norm_add = ListOfArray([np.zeros((v.size,), dtype=np.float32) for v in minimum.arrays])
-        _norm_mul = ListOfArray([np.ones((v.size,), dtype=np.float32) for v in minimum.arrays])
+        _norm_add = minimum.map(lambda v: np.zeros((v.size,), dtype=np.float32))
+        _norm_mul = minimum.map(lambda v: np.ones((v.size,), dtype=np.float32))
 
         for name, i in name_to_index_training_input.items():
             method = methods.get(name, self.default)

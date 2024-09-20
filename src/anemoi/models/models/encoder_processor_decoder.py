@@ -200,14 +200,16 @@ class AnemoiModelEncProcDec(nn.Module):
         lats = x.lats
         longs = x.longs
 
-        assert self.graph_create.is_already_instantiated
+        assert self._graph_data
+        
+        # TODO: clarify what is x here. (Florian)
 
-        dict_of_graphs = {}
-        for name in ["era5", "seviri"]:
-            array = arrays[name]
-            lat = lats[name]
-            long = longs[name]
-            dict_of_graphs[name] = self.graph_creator.new_graph(array, lat, long, name)
+        # TODO: update the dynamic graph
+        from anemoi.graphs.nodes import TensorNodes
+        from anemoi.graphs.create import GraphCreator
+        dynamic_graph = TensorNodes(x, "data", ["cos_sza", "cos_vza"]).update_graph(copy(self._graph_data))
+
+        dynamic_graph = GraphCreator("recipe_enc_dec.yaml").update_graph(dynamic_graph)
 
         batch_size = x.shape[0]
         ensemble_size = x.shape[2]
@@ -269,3 +271,10 @@ class AnemoiModelEncProcDec(nn.Module):
         # residual connection (just for the prognostic variables)
         x_out[..., self._internal_output_idx] += x[:, -1, :, :, self._internal_input_idx]
         return x_out
+
+# class AnemoiModelEncProcDec(nn.Module):
+#     def __init__(self, *, config, data_indices, graph_data):
+#         super().__init__()
+#     def forward(self, x, model_comm_group=None):
+#         print('❌', type(x))
+#         return x
