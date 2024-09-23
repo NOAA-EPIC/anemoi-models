@@ -196,6 +196,14 @@ class AnemoiModelEncProcDec(nn.Module):
         )
 
     def forward(self, x: Tensor, model_comm_group: Optional[ProcessGroup] = None) -> Tensor:
+
+        assert isinstance(x, list), type(x)
+        assert all(isinstance(i, list) for i in x), [type(i) for i in x]
+        for i in x:
+            assert all(isinstance(j, torch.Tensor) for j in i), [type(j) for j in i]
+        print('Entering forward 💬')
+
+
         arrays = x.arrays
         lats = x.lats
         longs = x.longs
