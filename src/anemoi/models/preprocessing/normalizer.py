@@ -11,7 +11,7 @@ import logging
 import warnings
 from typing import Optional
 
-from anemoi.datasets.data.observations import ListOfArray
+from anemoi.datasets.data.observations import AnemoiState
 
 import numpy as np
 import torch
@@ -53,10 +53,10 @@ class InputNormalizer(BasePreprocessor):
         mean = statistics["mean"]
         stdev = statistics["stdev"]
         
-        mean = ListOfArray(mean)
-        stdev = ListOfArray(stdev)
-        minimum = ListOfArray(minimum)
-        maximum = ListOfArray(maximum)
+        mean = AnemoiState(mean)
+        stdev = AnemoiState(stdev)
+        minimum = AnemoiState(minimum)
+        maximum = AnemoiState(maximum)
 
         self._validate_normalization_inputs(name_to_index_training_input, minimum, maximum, mean, stdev)
 
