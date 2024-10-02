@@ -48,8 +48,6 @@ class AnemoiModelEncProcDec(nn.Module):
             Graph definition
         """
         super().__init__()
-        print('❌', graph_data)
-        print('❌', data_indices)
 
         self._graph_data = graph_data
         self._graph_name_data = config.graph.data
@@ -142,7 +140,7 @@ class AnemoiModelEncProcDec(nn.Module):
             Name of nodes to map
         """
         print(nodes)
-        print('❌', self._graph_data[nodes])
+        # print(self._graph_data[nodes])
         coords = self._graph_data[nodes].x
         sin_cos_coords = torch.cat([torch.sin(coords), torch.cos(coords)], dim=-1)
         self.register_buffer(f"latlons_{name}", sin_cos_coords, persistent=True)
@@ -279,10 +277,3 @@ class AnemoiModelEncProcDec(nn.Module):
         # residual connection (just for the prognostic variables)
         x_out[..., self._internal_output_idx] += x[:, -1, :, :, self._internal_input_idx]
         return x_out
-
-# class AnemoiModelEncProcDec(nn.Module):
-#     def __init__(self, *, config, data_indices, graph_data):
-#         super().__init__()
-#     def forward(self, x, model_comm_group=None):
-#         print('❌', type(x))
-#         return x
