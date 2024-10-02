@@ -11,7 +11,7 @@ import logging
 import warnings
 from typing import Optional
 
-from anemoi.datasets.data.observations import AnemoiState
+from anemoi.datasets import AnemoiState
 
 import numpy as np
 import torch
